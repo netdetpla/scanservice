@@ -225,7 +225,7 @@ def get_nmap_result():
             for port_ele in ports_ele:
                 port_id = port_ele.attrib['portid']
                 proto = port_ele.attrib['protocol']
-                port = host_ins.ports[port_key.format(port_id=port_id, proto=proto)]
+                port = host_ins.ports[port_key.format(port_id=port_id, proto=proto)] = Port(port_id, proto, '')
                 port.status = port_ele.find('./state').attrib['state']
                 service_ele = port_ele.find('./service')
                 try:
