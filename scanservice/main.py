@@ -6,11 +6,11 @@ import traceback
 import xml.etree.ElementTree as ET
 import urllib.request as urllib2
 
-from . import config
-from . import log
-from . import is_connect
-from . import process
-from . import utils
+import config
+import log
+import is_connect
+import process
+import utils
 
 # 任务id
 task_id = ''
@@ -192,8 +192,8 @@ def shell_nmap():
 
 # 含有扫描策略
 def nmap():
-    nmap_ip = []
     global nmap_ip
+    nmap_ip = []   
     for ips in ip_list.split(','):
         nmap_ip += utils.ip_format(ips)
     if extra_info == '1':
@@ -207,7 +207,7 @@ def nmap():
             os_check=os_check,
             ports=target_port,
             filename=ip.replace('/', '-') + '.xml'
-        )])
+        )], shell=True)
 
 
 # 策略nmap结果回收
