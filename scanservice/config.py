@@ -21,4 +21,17 @@ NMAP_INPUT = '/nmap_data'
 # nmap shell脚本
 NMAP_SHELL = '/test.sh'
 # nmap 运行数量
-NMAP_COUNT = 100
+NMAP_COUNT = 50
+# 探测策略
+NMAP_STRATEGY = [
+    '-Pn -D192.168.128.64,10.85.123.44,172.168.13.15,ME',
+    '--max-scan-delay 10s',
+    '-sT',
+    '-sS',
+    '--scanflags RST',
+    '-sA',
+    '-sN',
+    '-sF',
+    '-sX',
+    '-sU'
+]
