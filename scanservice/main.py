@@ -32,6 +32,8 @@ platform = ''
 strategy = ''
 # ip列表
 ip_list = ''
+# only nmap mode
+mode = ''
 
 
 # 端口类
@@ -93,16 +95,18 @@ def get_config():
     global platform
     global strategy
     global ip_list
+    global mode
     with open(config.CONFIG_FILE, 'r') as f:
         task = str(base64.b64decode(f.read())).split(';')
         task_id = task[0][2:]
-        pro_uuid = task[7][:-1]
+        pro_uuid = task[8][:-1]
         task_name = task[1]
         platform = task[2]
         target_port = task[3]
         extra_info = task[4]
-        strategy = task[5].split(',')
-        ip_list = task[6]
+        mode = task[5]
+        strategy = task[6].split(',')
+        ip_list = task[7]
         with open(config.TARGET_LIST, 'w') as f:
             f.write(ip_list)
         if os.path.getsize(config.TARGET_LIST) <= 0 or len(target_port) <= 0:
@@ -369,8 +373,11 @@ if __name__ == '__main__':
     # 执行任务
     log.task_run()
     try:
-        strategy_strs = ' '.join([config.NMAP_STRATEGY[int(si)] for si in strategy])
-        if strategy_strs == '':
+        try:
+            strategy_strs = ' '.join([config.NMAP_STRATEGY[int(si)] for si in strategy])
+        except ValueError:
+            strategy_strs = ''
+        if strategy_strs == '' and mode == '0':
             masscan()
             generate_nmap_input()
             shell_nmap()
