@@ -55,7 +55,7 @@ class Port:
         return {
             'port': self.port,
             'protocol': self.protocol,
-            'status': self.status,
+            #'status': self.status,
             'service': self.service,
             'product': self.product,
             'version': self.version
@@ -204,12 +204,16 @@ def nmap():
         os_check = ' -O'
     else:
         os_check = ''
-    command = 'nmap {target} {os_check} -p {ports} -oX {filename}'
+    if mode == '1':
+        port_opt = ''
+    else:
+        port_opt = '-p ' + target_port
+    command = 'nmap {target} {os_check} {ports} --open -oX {filename}'
     for ip in nmap_ip:
         subprocess.call([command.format(
             target=ip,
             os_check=os_check,
-            ports=target_port,
+            ports=port_opt,
             filename=ip.replace('/', '-') + '.xml'
         )], shell=True)
 
@@ -396,7 +400,7 @@ if __name__ == '__main__':
     # 写结果
     log.write_result()
     try:
-        if strategy_strs == '':
+        if strategy_strs == '' and mode == '0':
             result = get_result()
         else:
             result = get_nmap_result()
