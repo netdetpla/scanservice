@@ -204,7 +204,7 @@ def nmap():
         os_check = ' -O'
     else:
         os_check = ''
-    command = 'nmap {target} {os_check} -p {ports} -oX {filename}'
+    command = 'nmap {target} {os_check} -p {ports} --open -oX {filename}'
     for ip in nmap_ip:
         subprocess.call([command.format(
             target=ip,
