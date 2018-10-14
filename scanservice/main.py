@@ -34,6 +34,9 @@ strategy = ''
 ip_list = ''
 # only nmap mode
 mode = ''
+# 不兼容策略
+tcp_strategy = []
+common_strategy = ''
 
 
 # 端口类
@@ -96,6 +99,8 @@ def get_config():
     global strategy
     global ip_list
     global mode
+    global tcp_strategy
+    global common_strategy
     with open(config.CONFIG_FILE, 'r') as f:
         task = str(base64.b64decode(f.read())).split(';')
         task_id = task[0][2:]
@@ -208,66 +213,91 @@ def nmap():
         port_opt = ''
     else:
         port_opt = '-p ' + target_port
-    command = 'nmap {target} {os_check} {ports} --open -oX {filename}'
-    for ip in nmap_ip:
-        subprocess.call([command.format(
-            target=ip,
-            os_check=os_check,
-            ports=port_opt,
-            filename=ip.replace('/', '-') + '.xml'
-        )], shell=True)
+    if len(tcp_strategy) == 0:
+        command = 'nmap {target} {os_check} {ports} --open -oX {filename}'
+        for ip in nmap_ip:
+            subprocess.call([command.format(
+                target=ip,
+                os_check=os_check,
+                ports=port_opt,
+                filename=ip.replace('/', '-') + '.xml'
+            )], shell=True)
+    else:
+        command = 'nmap {target} {os_check} {common_strategy} {tcp_strategy} {ports} --open -oX {front_fix}{filename}'
+        for ip in nmap_ip:
+            for t in tcp_strategy:
+                subprocess.call([command.format(
+                    target=ip,
+                    os_check=os_check,
+                    ports=port_opt,
+                    filename=ip.replace('/', '-') + '.xml',
+                    common_strategy=common_strategy,
+                    tcp_strategy=t,
+                    front_fix=t[1:]
+                )], shell=True)
 
 
 # 策略nmap结果回收
 def get_nmap_result():
     port_key = '{port_id}/{proto}'
-    for ip in nmap_ip:
-        filename = ip.replace('/', '-') + '.xml'
-        with open(filename, 'r') as f:
-            xml = ET.ElementTree(file=f)
-        host_eles = xml.findall('.//host')
-        for host_ele in host_eles:
-            host = host_ele.find('./address').attrib['addr']
-            host_ins = host_list[host] = Host(host)
-            ports_ele = xml.findall('.//port')
-            for port_ele in ports_ele:
-                port_id = port_ele.attrib['portid']
-                proto = port_ele.attrib['protocol']
-                port = host_ins.ports[port_key.format(port_id=port_id, proto=proto)] = Port(port_id, proto, '')
-                port.status = port_ele.find('./state').attrib['state']
-                service_ele = port_ele.find('./service')
-                try:
-                    port.service = service_ele.attrib['name']
-                except (KeyError, AttributeError):
-                    port.service = 'unknown'
-                try:
-                    port.product = service_ele.attrib['product']
-                    print('product: ' + port.product)
-                except (KeyError, AttributeError):
-                    port.product = 'unknown'
-                try:
-                    port.version = service_ele.attrib['version']
-                    print('version: ' + port.version)
-                except (KeyError, AttributeError):
-                    port.version = 'unknown'
-            if extra_info == '1':
-                os_ele = xml.findall('.//osmatch')
-                if os_ele is None:
-                    return
-                if host_ins.os_version == '':
+    tcp_strategy.append('')
+    for front in tcp_strategy:
+        for ip in nmap_ip:
+            if front:
+                filename = front[1:] + ip.replace('/', '-') + '.xml'
+            elif len(tcp_strategy) <= 1:
+                filename = ip.replace('/', '-') + '.xml'
+            else:
+                continue
+            with open(filename, 'r') as f:
+                xml = ET.ElementTree(file=f)
+            host_eles = xml.findall('.//host')
+            for host_ele in host_eles:
+                host = host_ele.find('./address').attrib['addr']
+                if host_list.get(host) and isinstance(host_list[host], Host):
+                    host_ins = host_list[host]
+                else:
+                    host_ins = host_list[host] = Host(host)
+                ports_ele = xml.findall('.//port')
+                for port_ele in ports_ele:
+                    port_id = port_ele.attrib['portid']
+                    proto = port_ele.attrib['protocol']
+                    port = host_ins.ports[port_key.format(port_id=port_id, proto=proto)] = Port(port_id, proto, '')
+                    port.status = port_ele.find('./state').attrib['state']
+                    service_ele = port_ele.find('./service')
                     try:
-                        host_ins.os_version = os_ele[0].attrib['name']
-                    except (KeyError, IndexError):
-                        host_ins.os_version = 'unknown'
-                if host_ins.hardware == '':
+                        port.service = service_ele.attrib['name']
+                    except (KeyError, AttributeError):
+                        port.service = 'unknown'
                     try:
-                        host_ins.hardware = os_ele[0].find('./osclass').attrib['type']
-                    except (KeyError, IndexError):
-                        host_ins.hardware = 'unknown'
+                        port.product = service_ele.attrib['product']
+                        print('product: ' + port.product)
+                    except (KeyError, AttributeError):
+                        port.product = 'unknown'
+                    try:
+                        port.version = service_ele.attrib['version']
+                        print('version: ' + port.version)
+                    except (KeyError, AttributeError):
+                        port.version = 'unknown'
+                if extra_info == '1':
+                    os_ele = xml.findall('.//osmatch')
+                    if os_ele is None:
+                        return
+                    if host_ins.os_version == '':
+                        try:
+                            host_ins.os_version = os_ele[0].attrib['name']
+                        except (KeyError, IndexError):
+                            host_ins.os_version = 'unknown'
+                    if host_ins.hardware == '':
+                        try:
+                            host_ins.hardware = os_ele[0].find('./osclass').attrib['type']
+                        except (KeyError, IndexError):
+                            host_ins.hardware = 'unknown'
 
     result = []
     for host in host_list:
-        result.append(host_list[host].to_dict())
+        if len(host_list[host].ports) > 0:
+            result.append(host_list[host].to_dict())
     return {
         'task_id': task_id,
         'subtask_id': subtask_id,
@@ -332,7 +362,8 @@ def get_result():
             pass
     result = []
     for host in host_list:
-        result.append(host_list[host].to_dict())
+        if len(host_list[host].ports) > 0:
+            result.append(host_list[host].to_dict())
     return {
         'task_id': task_id,
         'subtask_id': subtask_id,
@@ -386,6 +417,12 @@ if __name__ == '__main__':
             generate_nmap_input()
             shell_nmap()
         else:
+            for s in strategy:
+                if not int(s) in config.TCP_STRATEGY:
+                    common_strategy += config.NMAP_STRATEGY[int(s)]
+                    common_strategy += ' '
+                else:
+                    tcp_strategy.append(config.NMAP_STRATEGY[int(s)])
             nmap()
     except Exception as e:
         traceback.print_exc()

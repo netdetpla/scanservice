@@ -35,3 +35,5 @@ NMAP_STRATEGY = [
     '-sX',
     '-sU'
 ]
+# 不兼容策略
+TCP_STRATEGY = [2, 3, 5, 6, 7, 8]
