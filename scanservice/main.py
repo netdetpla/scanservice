@@ -55,6 +55,12 @@ class Port:
         self.version = ''
 
     def to_dict(self):
+        if self.service == '':
+            self.service = 'unknown'
+        if self.product == '':
+            self.product = 'unknown'
+        if self.version == '':
+            self.version = 'unknown'
         return {
             'port': self.port,
             'protocol': self.protocol,
@@ -79,6 +85,10 @@ class Host:
         temp_ports = []
         for port in self.ports:
             temp_ports.append(self.ports[port].to_dict())
+        if self.hardware == '':
+            self.hardware = 'unknown'
+        if self.os_version == '':
+            self.os_version = 'unknown'
         return {
             "ip": self.ip,
             "ports": temp_ports,
@@ -214,8 +224,14 @@ def nmap():
     else:
         port_opt = '-p ' + target_port
     if len(tcp_strategy) == 0:
-        command = 'nmap {target} {os_check} {ports} --open -oX {filename}'
+        command = 'nmap -Pn -sV {target} {os_check} {ports} --open -oX {filename}'
         for ip in nmap_ip:
+            print(command.format(
+                target=ip,
+                os_check=os_check,
+                ports=port_opt,
+                filename=ip.replace('/', '-') + '.xml'
+            ))
             subprocess.call([command.format(
                 target=ip,
                 os_check=os_check,
@@ -223,9 +239,18 @@ def nmap():
                 filename=ip.replace('/', '-') + '.xml'
             )], shell=True)
     else:
-        command = 'nmap {target} {os_check} {common_strategy} {tcp_strategy} {ports} --open -oX {front_fix}{filename}'
+        command = 'nmap -Pn -sV {target} {os_check} {common_strategy} {tcp_strategy} {ports} --open -oX {front_fix}{filename}'
         for ip in nmap_ip:
             for t in tcp_strategy:
+                print(command.format(
+                    target=ip,
+                    os_check=os_check,
+                    ports=port_opt,
+                    filename=ip.replace('/', '-') + '.xml',
+                    common_strategy=common_strategy,
+                    tcp_strategy=t,
+                    front_fix=t[1:]
+                ))
                 subprocess.call([command.format(
                     target=ip,
                     os_check=os_check,
@@ -418,7 +443,9 @@ if __name__ == '__main__':
             shell_nmap()
         else:
             for s in strategy:
-                if not int(s) in config.TCP_STRATEGY:
+                if s == '':
+                    pass
+                elif not int(s) in config.TCP_STRATEGY:
                     common_strategy += config.NMAP_STRATEGY[int(s)]
                     common_strategy += ' '
                 else:
