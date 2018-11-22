@@ -24,7 +24,7 @@ NMAP_SHELL = '/test.sh'
 NMAP_COUNT = 50
 # 探测策略
 NMAP_STRATEGY = [
-    '-Pn -D192.168.128.64,10.85.123.44,172.168.13.15,ME',
+    '-D192.168.128.64,10.85.123.44,172.168.13.15,ME',
     '--max-scan-delay 10s',
     '-sT',
     '-sS',
@@ -35,3 +35,5 @@ NMAP_STRATEGY = [
     '-sX',
     '-sU'
 ]
+# 不兼容策略
+TCP_STRATEGY = [2, 3, 5, 6, 7, 8]
