@@ -219,7 +219,10 @@ def nmap():
         os_check = ' -O'
     else:
         os_check = ''
-    port_opt = '-p ' + target_port
+    if mode == '1':
+        port_opt = ''
+    else:
+        port_opt = '-p ' + target_port
     if len(tcp_strategy) == 0:
         command = 'nmap -Pn -sV {target} {os_check} {ports} --open -oX {filename}'
         for ip in nmap_ip:
