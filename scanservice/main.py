@@ -221,7 +221,7 @@ def nmap():
         os_check = ''
     port_opt = '-p ' + target_port
     if len(tcp_strategy) == 0:
-        command = 'nmap -Pn -sV {target} {os_check} {ports} --open -oX {filename}'
+        command = 'nmap -Pn -vv {target} {os_check} {ports} --open -sV -oX {filename}'
         for ip in nmap_ip:
             print(command.format(
                 target=ip,
@@ -236,7 +236,7 @@ def nmap():
                 filename=ip.replace('/', '-') + '.xml'
             )], shell=True)
     else:
-        command = 'nmap -Pn -sV {target} {os_check} {common_strategy} {tcp_strategy} {ports} --open -oX {front_fix}{filename}'
+        command = 'nmap -Pn -vv {target} {os_check} {common_strategy} {tcp_strategy} {ports} --open -sV -oX {front_fix}{filename}'
         for ip in nmap_ip:
             for t in tcp_strategy:
                 print(command.format(
@@ -282,6 +282,8 @@ def get_nmap_result():
                     host_ins = host_list[host] = Host(host)
                 ports_ele = xml.findall('.//port')
                 for port_ele in ports_ele:
+                    if port_ele.find('./state').attrib['state'] != 'open':
+                        continue
                     port_id = port_ele.attrib['portid']
                     proto = port_ele.attrib['protocol']
                     port = host_ins.ports[port_key.format(port_id=port_id, proto=proto)] = Port(port_id, proto, '')
