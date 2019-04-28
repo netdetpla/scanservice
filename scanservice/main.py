@@ -157,7 +157,7 @@ def masscan():
     except FileNotFoundError:
         temp = ''
     if len(temp):
-        masscan_json = json.loads(temp[:-2] + temp[-1])
+        masscan_json = json.loads(temp)
     else:
         masscan_json = []
 

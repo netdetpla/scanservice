@@ -1,9 +1,9 @@
-FROM debian:latest 
+FROM debian:stretch 
 
 ADD ["sources.list", "/etc/apt/"]
 
 RUN apt update \
-    && apt -y install python3 python3-lxml gcc git make libpcap-dev wget alien net-tools \
+    && apt -y  --fix-missing install python3 python3-lxml gcc git make libpcap-dev wget alien net-tools \
     && git clone https://github.com/robertdavidgraham/masscan \
     && cd masscan \
     && make \
